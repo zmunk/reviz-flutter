@@ -15,7 +15,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blueAccent, brightness: Brightness.light),
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
@@ -49,13 +50,12 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
           itemCount: tiles.length,
           itemBuilder: (context, index) {
             int daysSince = getDaysSinceDate(tiles[index]['date']);
+
             // if at least 14 days have passed, show red
             // otherwise show a color between green and red
             const expirationDays = 14;
-            double t = (daysSince / expirationDays).clamp(0.0, 1.0);
-            Color pillColor = Color.lerp(Colors.green, Colors.red, t)!;
+            double colorInterp = (daysSince / expirationDays).clamp(0.0, 1.0);
 
-            // Interpolate between green and red based on `t`
             return InkWell(
                 onLongPress: () {
                   setState(() {
@@ -64,23 +64,40 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
                 },
                 child: Container(
                     color: index == _selectedIndex
-                        ? Colors.blue.withOpacity(0.3)
+                        ? Colors.blue.withAlpha(77)
                         : Colors.transparent,
                     child: ListTile(
-                        title: Text(tiles[index]['name']),
+                        title: Text(
+                          tiles[index]['name'],
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
                         trailing: Container(
                           padding: EdgeInsets.symmetric(
-                              horizontal: 8.0, vertical: 4.0),
+                              horizontal: 12.0, vertical: 6.0),
                           decoration: BoxDecoration(
-                            color: pillColor, // Background color of the pill
+                            color: Color.lerp(
+                                    Colors.green, Colors.red, colorInterp)!
+                                .withAlpha(
+                                    230), // Interpolate between green and red based on `colorInterp`
                             borderRadius:
-                                BorderRadius.circular(12.0), // Rounded corners
+                                BorderRadius.circular(16.0), // Rounded corners
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 2,
+                                offset: Offset(1, 1),
+                              ),
+                            ],
                           ),
                           child: Text(
                             "$daysSince d",
                             style: TextStyle(
                               color: Colors.white, // Text color
                               fontSize: 12.0, // Text size
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ))));
@@ -108,11 +125,24 @@ class _MyHomePageState extends State<MyHomePage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Add a New Tile'),
+          title: Text(
+            'Add a New Tile',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
           content: TextField(
             controller: controller,
             decoration: InputDecoration(
               hintText: 'Enter tile name',
+              filled: true,
+              fillColor: Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest, // Replaced surfaceVariant with surfaceContainerHighest
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
           actions: [
@@ -120,7 +150,12 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
               },
-              child: Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
             ),
             TextButton(
               onPressed: () {
@@ -129,7 +164,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   tileListNotifier.addTile(controller.text); // Add the new tile
                 }
               },
-              child: Text('Add'),
+              child: Text(
+                'Add',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
             ),
           ],
         );
@@ -141,7 +181,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         title: Text(widget.title),
       ),
       body: ScrollableTileList(),
@@ -151,7 +191,8 @@ class _MyHomePageState extends State<MyHomePage> {
           _showAddTileDialog(context);
         },
         tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

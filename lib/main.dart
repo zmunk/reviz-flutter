@@ -58,8 +58,6 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
             });
           },
           children: List.generate(tiles.length, (index) {
-            // itemCount: tiles.length,
-            // itemBuilder: (context, index) {
             int daysSince = getDaysSinceDate(tiles[index]['date']);
 
             // if at least 14 days have passed, show red
@@ -149,65 +147,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  void _showAddTileDialog(BuildContext context) {
-    final TextEditingController controller = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-            'Add a New Tile',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          content: TextField(
-            controller: controller,
-            decoration: InputDecoration(
-              hintText: 'Enter tile name',
-              filled: true,
-              fillColor: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest, // Replaced surfaceVariant with surfaceContainerHighest
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.0),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                if (controller.text.isNotEmpty) {
-                  Navigator.of(context).pop(); // Close the dialog
-                  tileListNotifier.addTile(controller.text); // Add the new tile
-                }
-              },
-              child: Text(
-                'Add',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -217,14 +156,85 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: ScrollableTileList(),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
+        onPressed: () => showDialog(
           // show alert dialog that allows user to create a new tile
-          _showAddTileDialog(context);
-        },
+          context: context,
+          builder: (context) {
+            return AddTileDialog();
+          },
+        ),
         tooltip: 'Increment',
         backgroundColor: Theme.of(context).colorScheme.secondary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
+    );
+  }
+}
+
+class AddTileDialog extends StatefulWidget {
+  const AddTileDialog({super.key});
+
+  @override
+  State<AddTileDialog> createState() => _AddTileDialogState();
+}
+
+class _AddTileDialogState extends State<AddTileDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        'Add a New Tile',
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+      ),
+      content: TextField(
+        controller: _controller,
+        decoration: InputDecoration(
+          hintText: 'Enter tile name',
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop(); // Close the dialog
+          },
+          child: Text(
+            'Cancel',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            if (_controller.text.isNotEmpty) {
+              Navigator.of(context).pop(); // Close the dialog
+              tileListNotifier.addTile(_controller.text); // Add the new tile
+            }
+          },
+          child: Text(
+            'Add',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

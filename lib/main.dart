@@ -46,9 +46,20 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
     return ValueListenableBuilder(
       valueListenable: tileListNotifier,
       builder: (context, tiles, child) {
-        return ListView.builder(
-          itemCount: tiles.length,
-          itemBuilder: (context, index) {
+        return ReorderableListView(
+          buildDefaultDragHandles: false, // Disable default right handle
+          onReorder: (int oldIndex, int newIndex) {
+            setState(() {
+              if (oldIndex < newIndex) {
+                newIndex -= 1;
+              }
+              final item = tiles.removeAt(oldIndex);
+              tiles.insert(newIndex, item);
+            });
+          },
+          children: List.generate(tiles.length, (index) {
+            // itemCount: tiles.length,
+            // itemBuilder: (context, index) {
             int daysSince = getDaysSinceDate(tiles[index]['date']);
 
             // if at least 14 days have passed, show red
@@ -57,51 +68,71 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
             double colorInterp = (daysSince / expirationDays).clamp(0.0, 1.0);
 
             return InkWell(
-                onLongPress: () {
-                  setState(() {
-                    _selectedIndex = index;
-                  });
-                },
-                child: Container(
-                    color: index == _selectedIndex
-                        ? Colors.blue.withAlpha(77)
-                        : Colors.transparent,
-                    child: ListTile(
-                        title: Text(
-                          tiles[index]['name'],
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
+              key: Key("$index"),
+              onLongPress: () {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+              child: Container(
+                color: index == _selectedIndex
+                    ? Colors.blue.withAlpha(77)
+                    : Colors.transparent,
+                child: Row(
+                  children: [
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Container(
+                        padding: EdgeInsets.all(8.0),
+                        child: Icon(
+                          Icons.drag_indicator,
+                          color: Colors.grey.withAlpha(180),
+                          size: 24.0,
                         ),
-                        trailing: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 12.0, vertical: 6.0),
-                          decoration: BoxDecoration(
-                            color: Color.lerp(
-                                    Colors.green, Colors.red, colorInterp)!
-                                .withAlpha(
-                                    230), // Interpolate between green and red based on `colorInterp`
-                            borderRadius:
-                                BorderRadius.circular(16.0), // Rounded corners
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 2,
-                                offset: Offset(1, 1),
+                      ),
+                    ),
+                    Expanded(
+                        child: ListTile(
+                            contentPadding:
+                                EdgeInsets.symmetric(horizontal: 8.0),
+                            title: Text(
+                              tiles[index]['name'],
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
-                            ],
-                          ),
-                          child: Text(
-                            "$daysSince d",
-                            style: TextStyle(
-                              color: Colors.white, // Text color
-                              fontSize: 12.0, // Text size
-                              fontWeight: FontWeight.w600,
                             ),
-                          ),
-                        ))));
-          },
+                            trailing: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12.0, vertical: 6.0),
+                              decoration: BoxDecoration(
+                                color: Color.lerp(
+                                        Colors.green, Colors.red, colorInterp)!
+                                    .withAlpha(
+                                        230), // Interpolate between green and red based on `colorInterp`
+                                borderRadius: BorderRadius.circular(16.0),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 2,
+                                    offset: Offset(1, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                "$daysSince d",
+                                style: TextStyle(
+                                  color: Colors.white, // Text color
+                                  fontSize: 12.0, // Text size
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            )))
+                  ],
+                ),
+              ),
+            );
+          }),
         );
       },
     );

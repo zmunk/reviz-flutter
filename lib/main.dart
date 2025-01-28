@@ -19,17 +19,10 @@ class MyApp extends StatelessWidget {
             seedColor: Colors.blueAccent, brightness: Brightness.light),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Flutter Demo Home Page'),
       debugShowCheckedModeBanner: false,
     );
   }
-}
-
-class ScrollableTileList extends StatefulWidget {
-  const ScrollableTileList({super.key});
-
-  @override
-  State<ScrollableTileList> createState() => _ScrollableTileListState();
 }
 
 int getDaysSinceDate(String isoDate) {
@@ -39,12 +32,23 @@ int getDaysSinceDate(String isoDate) {
   return difference.inDays;
 }
 
+class ScrollableTileList extends StatefulWidget {
+  final TileListNotifier tileListNotifier;
+  final Function(int) onSelection;
+
+  const ScrollableTileList(
+      {super.key, required this.tileListNotifier, required this.onSelection});
+
+  @override
+  State<ScrollableTileList> createState() => _ScrollableTileListState();
+}
+
 class _ScrollableTileListState extends State<ScrollableTileList> {
   int? _selectedIndex; // tracks index of selected tile
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: tileListNotifier,
+      valueListenable: widget.tileListNotifier,
       builder: (context, tiles, child) {
         return ReorderableListView(
           buildDefaultDragHandles: false, // Disable default right handle
@@ -68,6 +72,7 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
             return InkWell(
               key: Key("$index"),
               onLongPress: () {
+                widget.onSelection(index);
                 setState(() {
                   _selectedIndex = index;
                 });
@@ -90,42 +95,43 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
                       ),
                     ),
                     Expanded(
-                        child: ListTile(
-                            contentPadding:
-                                EdgeInsets.symmetric(horizontal: 8.0),
-                            title: Text(
-                              tiles[index]['name'],
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: Theme.of(context).colorScheme.onSurface,
+                      child: ListTile(
+                        contentPadding: EdgeInsets.symmetric(horizontal: 8.0),
+                        title: Text(
+                          tiles[index]['name'],
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        trailing: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 12.0, vertical: 6.0),
+                          decoration: BoxDecoration(
+                            color: Color.lerp(
+                                    Colors.green, Colors.red, colorInterp)!
+                                .withAlpha(
+                                    230), // Interpolate between green and red based on `colorInterp`
+                            borderRadius: BorderRadius.circular(16.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 2,
+                                offset: Offset(1, 1),
                               ),
+                            ],
+                          ),
+                          child: Text(
+                            "$daysSince d",
+                            style: TextStyle(
+                              color: Colors.white, // Text color
+                              fontSize: 12.0, // Text size
+                              fontWeight: FontWeight.w600,
                             ),
-                            trailing: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 12.0, vertical: 6.0),
-                              decoration: BoxDecoration(
-                                color: Color.lerp(
-                                        Colors.green, Colors.red, colorInterp)!
-                                    .withAlpha(
-                                        230), // Interpolate between green and red based on `colorInterp`
-                                borderRadius: BorderRadius.circular(16.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 2,
-                                    offset: Offset(1, 1),
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                "$daysSince d",
-                                style: TextStyle(
-                                  color: Colors.white, // Text color
-                                  fontSize: 12.0, // Text size
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            )))
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -138,7 +144,9 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  final TileListNotifier tileListNotifier = TileListNotifier();
+
+  MyHomePage({super.key, required this.title});
 
   final String title;
 
@@ -147,23 +155,45 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool _updateTileMode = false;
+
+  void _tileSelected(int? index) {
+    setState(() {
+      _updateTileMode = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        title: Text(widget.title),
+        backgroundColor: _updateTileMode
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.primaryContainer,
+        title: Text(
+          _updateTileMode ? "" : widget.title,
+          style: TextStyle(
+            color: _updateTileMode
+                ? Theme.of(context).colorScheme.onPrimary
+                : Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
+        ),
       ),
-      body: ScrollableTileList(),
+      body: ScrollableTileList(
+        tileListNotifier: widget.tileListNotifier,
+        onSelection: _tileSelected,
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => showDialog(
           // show alert dialog that allows user to create a new tile
           context: context,
           builder: (context) {
-            return AddTileDialog();
+            return AddTileDialog(
+              onSubmit: (text) => widget.tileListNotifier.addTile(text),
+            );
           },
         ),
-        tooltip: 'Increment',
+        tooltip: 'Add tile',
         backgroundColor: Theme.of(context).colorScheme.secondary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -172,7 +202,8 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class AddTileDialog extends StatefulWidget {
-  const AddTileDialog({super.key});
+  final Function(String) onSubmit;
+  const AddTileDialog({super.key, required this.onSubmit});
 
   @override
   State<AddTileDialog> createState() => _AddTileDialogState();
@@ -224,7 +255,7 @@ class _AddTileDialogState extends State<AddTileDialog> {
           onPressed: () {
             if (_controller.text.isNotEmpty) {
               Navigator.of(context).pop(); // Close the dialog
-              tileListNotifier.addTile(_controller.text); // Add the new tile
+              widget.onSubmit(_controller.text);
             }
           },
           child: Text(
@@ -238,9 +269,6 @@ class _AddTileDialogState extends State<AddTileDialog> {
     );
   }
 }
-
-// Create a global instance of TileListNotifier
-final tileListNotifier = TileListNotifier();
 
 class TileListNotifier extends ChangeNotifier
     implements ValueListenable<List<Map<String, dynamic>>> {
@@ -264,6 +292,7 @@ class TileListNotifier extends ChangeNotifier
           .map((json) => Map<String, dynamic>.from(jsonDecode(json)))
           .toList();
     }
+    notifyListeners();
   }
 
   // Save tiles to SharedPreferences

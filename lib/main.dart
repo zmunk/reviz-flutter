@@ -36,6 +36,25 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class ScrollableTileList extends StatefulWidget {
+  const ScrollableTileList({super.key});
+
+  @override
+  State<ScrollableTileList> createState() => _ScrollableTileListState();
+}
+
+class _ScrollableTileListState extends State<ScrollableTileList> {
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: 20,
+      itemBuilder: (context, index) {
+        return ListTile(title: Text('Tile $index'));
+      },
+    );
+  }
+}
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
@@ -86,12 +105,7 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body: ListView.builder(
-        itemCount: 20,
-        itemBuilder: (context, index) {
-          return ListTile(title: Text('Tile $index'));
-        },
-      ),
+      body: ScrollableTileList(),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
         tooltip: 'Increment',

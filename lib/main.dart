@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
 
 void main() {
   runApp(const MyApp());
@@ -18,6 +19,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -29,7 +31,15 @@ class ScrollableTileList extends StatefulWidget {
   State<ScrollableTileList> createState() => _ScrollableTileListState();
 }
 
+int getDaysSinceDate(String isoDate) {
+  DateTime date = DateTime.parse(isoDate);
+  DateTime now = DateTime.now();
+  Duration difference = now.difference(date);
+  return difference.inDays;
+}
+
 class _ScrollableTileListState extends State<ScrollableTileList> {
+  int? _selectedIndex; // tracks index of selected tile
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
@@ -38,7 +48,42 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
         return ListView.builder(
           itemCount: tiles.length,
           itemBuilder: (context, index) {
-            return ListTile(title: Text(tiles[index]));
+            int daysSince = getDaysSinceDate(tiles[index]['date']);
+            // if at least 14 days have passed, show red
+            // otherwise show a color between green and red
+            const expirationDays = 14;
+            double t = (daysSince / expirationDays).clamp(0.0, 1.0);
+            Color pillColor = Color.lerp(Colors.green, Colors.red, t)!;
+
+            // Interpolate between green and red based on `t`
+            return InkWell(
+                onLongPress: () {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                },
+                child: Container(
+                    color: index == _selectedIndex
+                        ? Colors.blue.withOpacity(0.3)
+                        : Colors.transparent,
+                    child: ListTile(
+                        title: Text(tiles[index]['name']),
+                        trailing: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 8.0, vertical: 4.0),
+                          decoration: BoxDecoration(
+                            color: pillColor, // Background color of the pill
+                            borderRadius:
+                                BorderRadius.circular(12.0), // Rounded corners
+                          ),
+                          child: Text(
+                            "$daysSince d",
+                            style: TextStyle(
+                              color: Colors.white, // Text color
+                              fontSize: 12.0, // Text size
+                            ),
+                          ),
+                        ))));
           },
         );
       },
@@ -107,7 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         tooltip: 'Increment',
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }
@@ -116,12 +161,12 @@ class _MyHomePageState extends State<MyHomePage> {
 final tileListNotifier = TileListNotifier();
 
 class TileListNotifier extends ChangeNotifier
-    implements ValueListenable<List<String>> {
-  List<String> _tiles = [];
+    implements ValueListenable<List<Map<String, dynamic>>> {
+  List<Map<String, dynamic>> _tiles = [];
 
   // Required by ValueListenable
   @override
-  List<String> get value => _tiles;
+  List<Map<String, dynamic>> get value => _tiles;
 
   TileListNotifier() {
     _loadTiles(); // Load tiles when the notifier is created
@@ -130,18 +175,26 @@ class TileListNotifier extends ChangeNotifier
   // Load tiles from SharedPreferences
   Future<void> _loadTiles() async {
     final prefs = await SharedPreferences.getInstance();
-    _tiles = prefs.getStringList('tiles') ?? [];
+
+    final List<String>? tilesJson = prefs.getStringList('tiles');
+    if (tilesJson != null) {
+      _tiles = tilesJson
+          .map((json) => Map<String, dynamic>.from(jsonDecode(json)))
+          .toList();
+    }
   }
 
   // Save tiles to SharedPreferences
   Future<void> _saveTiles() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('tiles', _tiles);
+    final List<String> tilesJson =
+        _tiles.map((tile) => jsonEncode(tile)).toList();
+    await prefs.setStringList('tiles', tilesJson);
   }
 
   // Add a new tile and save to SharedPreferences
   void addTile(String text) {
-    _tiles.add(text);
+    _tiles.add({'name': text, 'date': DateTime.now().toIso8601String()});
     _saveTiles(); // Save the updated list to SharedPreferences
     notifyListeners(); // Notify listeners to update the UI
   }

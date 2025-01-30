@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
             seedColor: Colors.green.shade200, brightness: Brightness.light),
         useMaterial3: true,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Tasks'),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -74,6 +74,13 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
       return widget.tileListNotifier.getTileName(_selectedIndex!);
     } else {
       return null;
+    }
+  }
+
+  void deleteSelectedTile() {
+    if (_selectedIndex != null) {
+      widget.tileListNotifier.deleteTile(_selectedIndex!);
+      _handleSelection(null);
     }
   }
 
@@ -273,6 +280,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                   "",
                             ),
                           );
+                        } else if (value == "delete") {
+                          _tileListKey.currentState?.deleteSelectedTile();
                         }
                       },
                       itemBuilder: (BuildContext context) {
@@ -467,5 +476,9 @@ class TileListNotifier extends ChangeNotifier
 
   String getTileName(int tileIndex) {
     return _tiles[tileIndex]['name'];
+  }
+
+  void deleteTile(int tileIndex) {
+    _tiles.removeAt(tileIndex);
   }
 }

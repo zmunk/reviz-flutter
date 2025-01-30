@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 
 void main() {
@@ -177,13 +178,19 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
+        // override back navigation
         if (_selectionModeEnabled) {
+          // disable selection mode but don't navigate back
           _exitSelectionMode();
-          return false;
+        } else if (Navigator.canPop(context)) {
+          // navigate back
+          Navigator.of(context).pop();
         } else {
-          return true;
+          // if no previous screen, exit app
+          await SystemNavigator.pop();
         }
       },
       child: Scaffold(

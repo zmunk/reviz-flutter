@@ -34,7 +34,7 @@ int getDaysSinceDate(String isoDate) {
 
 class ScrollableTileList extends StatefulWidget {
   final TileListNotifier tileListNotifier;
-  final Function(int) onSelection;
+  final Function(int?) onSelection;
 
   const ScrollableTileList(
       {super.key, required this.tileListNotifier, required this.onSelection});
@@ -45,6 +45,18 @@ class ScrollableTileList extends StatefulWidget {
 
 class _ScrollableTileListState extends State<ScrollableTileList> {
   int? _selectedIndex; // tracks index of selected tile
+
+  void exitSelectionMode() {
+    _handleSelection(null);
+  }
+
+  void _handleSelection(int? index) {
+    widget.onSelection(index);
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
@@ -71,12 +83,7 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
 
             return InkWell(
               key: Key("$index"),
-              onLongPress: () {
-                widget.onSelection(index);
-                setState(() {
-                  _selectedIndex = index;
-                });
-              },
+              onLongPress: () => _handleSelection(index),
               child: Container(
                 color: index == _selectedIndex
                     ? Colors.blue.withAlpha(77)
@@ -155,11 +162,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  bool _updateTileMode = false;
+  bool _selectionModeEnabled = false;
+  final GlobalKey<_ScrollableTileListState> _childKey = GlobalKey();
 
   void _tileSelected(int? index) {
     setState(() {
-      _updateTileMode = true;
+      _selectionModeEnabled = index != null;
     });
   }
 
@@ -167,19 +175,30 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: _updateTileMode
+        leading: _selectionModeEnabled
+            ? IconButton(
+                icon: Icon(Icons.close,
+                    color: Theme.of(context).colorScheme.onPrimary),
+                onPressed: () {
+                  _childKey.currentState?.exitSelectionMode();
+                  // print('X button pressed');
+                },
+              )
+            : null,
+        backgroundColor: _selectionModeEnabled
             ? Theme.of(context).colorScheme.primary
             : Theme.of(context).colorScheme.primaryContainer,
         title: Text(
-          _updateTileMode ? "" : widget.title,
+          _selectionModeEnabled ? "" : widget.title,
           style: TextStyle(
-            color: _updateTileMode
+            color: _selectionModeEnabled
                 ? Theme.of(context).colorScheme.onPrimary
                 : Theme.of(context).colorScheme.onPrimaryContainer,
           ),
         ),
       ),
       body: ScrollableTileList(
+        key: _childKey,
         tileListNotifier: widget.tileListNotifier,
         onSelection: _tileSelected,
       ),

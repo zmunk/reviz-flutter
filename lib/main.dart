@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blueAccent, brightness: Brightness.light),
+            seedColor: Colors.green.shade200, brightness: Brightness.light),
         useMaterial3: true,
       ),
       home: MyHomePage(title: 'Flutter Demo Home Page'),
@@ -96,12 +96,14 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
             const expirationDays = 14;
             double colorInterp = (daysSince / expirationDays).clamp(0.0, 1.0);
 
+            final isSelected = index == _selectedIndex;
+
             return InkWell(
               key: Key("$index"),
               onLongPress: () => _handleSelection(index),
               child: Container(
-                color: index == _selectedIndex
-                    ? Colors.blue.withAlpha(77)
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
                     : Colors.transparent,
                 child: Row(
                   children: [
@@ -111,7 +113,9 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
                         padding: EdgeInsets.all(8.0),
                         child: Icon(
                           Icons.drag_indicator,
-                          color: Colors.grey.withAlpha(180),
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primaryContainer
+                              : Theme.of(context).colorScheme.surfaceDim,
                           size: 24.0,
                         ),
                       ),
@@ -123,7 +127,9 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
                           tiles[index]['name'],
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
-                            color: Theme.of(context).colorScheme.onSurface,
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         trailing: Container(
@@ -208,6 +214,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       },
       child: Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
           leading: _selectionModeEnabled
               ? IconButton(
@@ -217,14 +224,14 @@ class _MyHomePageState extends State<MyHomePage> {
                 )
               : null,
           backgroundColor: _selectionModeEnabled
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.primaryContainer,
+              ? Theme.of(context).colorScheme.tertiary
+              : Theme.of(context).colorScheme.secondary,
           title: Text(
             _selectionModeEnabled ? "" : widget.title,
             style: TextStyle(
               color: _selectionModeEnabled
-                  ? Theme.of(context).colorScheme.onPrimary
-                  : Theme.of(context).colorScheme.onPrimaryContainer,
+                  ? Theme.of(context).colorScheme.onTertiary
+                  : Theme.of(context).colorScheme.onSecondary,
             ),
           ),
         ),
@@ -247,7 +254,7 @@ class _MyHomePageState extends State<MyHomePage> {
               );
             }
           },
-          tooltip: _selectionModeEnabled ? 'Reset data' : 'Add tile',
+          tooltip: _selectionModeEnabled ? 'Reset date' : 'Add tile',
           backgroundColor: _selectionModeEnabled
               ? Colors.green
               : Theme.of(context).colorScheme.primary,

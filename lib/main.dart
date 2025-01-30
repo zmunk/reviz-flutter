@@ -63,6 +63,20 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
     exitSelectionMode();
   }
 
+  void updateTileName(String text) {
+    if (_selectedIndex != null) {
+      widget.tileListNotifier.updateTileName(_selectedIndex!, text);
+    }
+  }
+
+  String? getSelectedTileText() {
+    if (_selectedIndex != null) {
+      return widget.tileListNotifier.getTileName(_selectedIndex!);
+    } else {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
@@ -234,6 +248,49 @@ class _MyHomePageState extends State<MyHomePage> {
                   : Theme.of(context).colorScheme.onSecondary,
             ),
           ),
+          actions: _selectionModeEnabled
+              ? [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: PopupMenuButton<String>(
+                      color: Theme.of(context).colorScheme.surface,
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                      onSelected: (String value) {
+                        if (value == "rename") {
+                          showDialog(
+                            // show alert dialog that allows user to rename tile
+                            context: context,
+                            builder: (context) => InputDialog(
+                              title: "Rename Task",
+                              submitButtonName: "Save",
+                              onSubmit: (text) => _tileListKey.currentState
+                                  ?.updateTileName(text),
+                              initialText: _tileListKey.currentState
+                                      ?.getSelectedTileText() ??
+                                  "",
+                            ),
+                          );
+                        }
+                      },
+                      itemBuilder: (BuildContext context) {
+                        return [
+                          PopupMenuItem<String>(
+                            value: 'rename',
+                            child: Text('Rename'),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'delete',
+                            child: Text('Delete'),
+                          ),
+                        ];
+                      },
+                    ),
+                  ),
+                ]
+              : null,
         ),
         body: ScrollableTileList(
           key: _tileListKey,
@@ -248,7 +305,9 @@ class _MyHomePageState extends State<MyHomePage> {
               showDialog(
                 // show alert dialog that allows user to create a new tile
                 context: context,
-                builder: (context) => AddTileDialog(
+                builder: (context) => InputDialog(
+                  title: 'Add a New Task',
+                  submitButtonName: "Add",
                   onSubmit: (text) => widget.tileListNotifier.addTile(text),
                 ),
               );
@@ -267,28 +326,38 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class AddTileDialog extends StatefulWidget {
+class InputDialog extends StatefulWidget {
+  final String title;
+  final String submitButtonName;
+  final String initialText;
   final Function(String) onSubmit;
-  const AddTileDialog({super.key, required this.onSubmit});
+
+  const InputDialog({
+    super.key,
+    required this.title,
+    required this.submitButtonName,
+    required this.onSubmit,
+    this.initialText = "",
+  });
 
   @override
-  State<AddTileDialog> createState() => _AddTileDialogState();
+  State<InputDialog> createState() => _InputDialogState();
 }
 
-class _AddTileDialogState extends State<AddTileDialog> {
+class _InputDialogState extends State<InputDialog> {
   late final TextEditingController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController();
+    _controller = TextEditingController(text: widget.initialText);
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(
-        'Add a New Tile',
+        widget.title,
         style: TextStyle(
           color: Theme.of(context).colorScheme.onSurface,
         ),
@@ -296,7 +365,7 @@ class _AddTileDialogState extends State<AddTileDialog> {
       content: TextField(
         controller: _controller,
         decoration: InputDecoration(
-          hintText: 'Enter tile name',
+          hintText: 'Enter task name',
           filled: true,
           fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
           border: OutlineInputBorder(
@@ -325,7 +394,7 @@ class _AddTileDialogState extends State<AddTileDialog> {
             }
           },
           child: Text(
-            'Add',
+            widget.submitButtonName,
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
             ),
@@ -388,5 +457,15 @@ class TileListNotifier extends ChangeNotifier
     }
     _saveTiles();
     notifyListeners();
+  }
+
+  void updateTileName(int tileIndex, String text) {
+    _tiles[tileIndex]['name'] = text;
+    _saveTiles();
+    notifyListeners();
+  }
+
+  String getTileName(int tileIndex) {
+    return _tiles[tileIndex]['name'];
   }
 }

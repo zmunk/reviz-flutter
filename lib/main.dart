@@ -58,6 +58,11 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
     });
   }
 
+  void resetSelectedTileDate() {
+    widget.tileListNotifier.resetTileDate(_selectedIndex);
+    exitSelectionMode();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
@@ -164,7 +169,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool _selectionModeEnabled = false;
-  final GlobalKey<_ScrollableTileListState> _childKey = GlobalKey();
+  final GlobalKey<_ScrollableTileListState> _tileListKey = GlobalKey();
 
   void _tileSelected(int? index) {
     setState(() {
@@ -173,7 +178,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _exitSelectionMode() {
-    _childKey.currentState?.exitSelectionMode();
+    _tileListKey.currentState?.exitSelectionMode();
   }
 
   @override
@@ -215,23 +220,31 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
         body: ScrollableTileList(
-          key: _childKey,
+          key: _tileListKey,
           tileListNotifier: widget.tileListNotifier,
           onSelection: _tileSelected,
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => showDialog(
-            // show alert dialog that allows user to create a new tile
-            context: context,
-            builder: (context) {
-              return AddTileDialog(
-                onSubmit: (text) => widget.tileListNotifier.addTile(text),
+          onPressed: () {
+            if (_selectionModeEnabled) {
+              _tileListKey.currentState?.resetSelectedTileDate();
+            } else {
+              showDialog(
+                // show alert dialog that allows user to create a new tile
+                context: context,
+                builder: (context) => AddTileDialog(
+                  onSubmit: (text) => widget.tileListNotifier.addTile(text),
+                ),
               );
-            },
-          ),
-          tooltip: 'Add tile',
-          backgroundColor: Theme.of(context).colorScheme.secondary,
-          child: const Icon(Icons.add, color: Colors.white),
+            }
+          },
+          tooltip: _selectionModeEnabled ? 'Reset data' : 'Add tile',
+          backgroundColor: _selectionModeEnabled
+              ? Colors.green
+              : Theme.of(context).colorScheme.primary,
+          shape: _selectionModeEnabled ? CircleBorder() : null,
+          child: Icon(_selectionModeEnabled ? Icons.done : Icons.add,
+              color: Colors.white),
         ),
       ),
     );
@@ -338,12 +351,20 @@ class TileListNotifier extends ChangeNotifier
     final List<String> tilesJson =
         _tiles.map((tile) => jsonEncode(tile)).toList();
     await prefs.setStringList('tiles', tilesJson);
+    notifyListeners(); // Notify listeners to update the UI
   }
 
   // Add a new tile and save to SharedPreferences
   void addTile(String text) {
     _tiles.add({'name': text, 'date': DateTime.now().toIso8601String()});
-    _saveTiles(); // Save the updated list to SharedPreferences
-    notifyListeners(); // Notify listeners to update the UI
+    _saveTiles();
+  }
+
+  void resetTileDate(int? tileIndex) {
+    print("tileIndex: $tileIndex");
+    if (tileIndex != null) {
+      _tiles[tileIndex]['date'] = DateTime.now().toIso8601String();
+    }
+    _saveTiles();
   }
 }

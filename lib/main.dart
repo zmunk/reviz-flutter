@@ -70,14 +70,23 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
       builder: (context, tiles, child) {
         return ReorderableListView(
           buildDefaultDragHandles: false, // Disable default right handle
-          onReorder: (int oldIndex, int newIndex) {
-            setState(() {
-              if (oldIndex < newIndex) {
-                newIndex -= 1;
+          onReorder: (int oldIndex, int newIndex) async {
+            if (oldIndex < newIndex) {
+              newIndex -= 1;
+            }
+            int? newSelectedIndex = _selectedIndex;
+            if (_selectedIndex != null) {
+              if (oldIndex < _selectedIndex! && _selectedIndex! <= newIndex) {
+                newSelectedIndex = _selectedIndex! - 1;
+              } else if (newIndex <= _selectedIndex! &&
+                  _selectedIndex! < oldIndex) {
+                newSelectedIndex = _selectedIndex! + 1;
+              } else if (_selectedIndex! == oldIndex) {
+                newSelectedIndex = newIndex;
               }
-              final item = tiles.removeAt(oldIndex);
-              tiles.insert(newIndex, item);
-            });
+            }
+            setState(() => _selectedIndex = newSelectedIndex);
+            widget.tileListNotifier.moveTile(oldIndex, newIndex);
           },
           children: List.generate(tiles.length, (index) {
             int daysSince = getDaysSinceDate(tiles[index]['date']);
@@ -351,20 +360,26 @@ class TileListNotifier extends ChangeNotifier
     final List<String> tilesJson =
         _tiles.map((tile) => jsonEncode(tile)).toList();
     await prefs.setStringList('tiles', tilesJson);
-    notifyListeners(); // Notify listeners to update the UI
   }
 
   // Add a new tile and save to SharedPreferences
   void addTile(String text) {
     _tiles.add({'name': text, 'date': DateTime.now().toIso8601String()});
     _saveTiles();
+    notifyListeners(); // Notify listeners to update the UI
+  }
+
+  void moveTile(int oldIndex, int newIndex) {
+    final tile = _tiles.removeAt(oldIndex);
+    _tiles.insert(newIndex, tile);
+    _saveTiles();
   }
 
   void resetTileDate(int? tileIndex) {
-    print("tileIndex: $tileIndex");
     if (tileIndex != null) {
       _tiles[tileIndex]['date'] = DateTime.now().toIso8601String();
     }
     _saveTiles();
+    notifyListeners();
   }
 }

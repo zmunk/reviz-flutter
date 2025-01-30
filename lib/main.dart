@@ -171,50 +171,61 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void _exitSelectionMode() {
+    _childKey.currentState?.exitSelectionMode();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: _selectionModeEnabled
-            ? IconButton(
-                icon: Icon(Icons.close,
-                    color: Theme.of(context).colorScheme.onPrimary),
-                onPressed: () {
-                  _childKey.currentState?.exitSelectionMode();
-                  // print('X button pressed');
-                },
-              )
-            : null,
-        backgroundColor: _selectionModeEnabled
-            ? Theme.of(context).colorScheme.primary
-            : Theme.of(context).colorScheme.primaryContainer,
-        title: Text(
-          _selectionModeEnabled ? "" : widget.title,
-          style: TextStyle(
-            color: _selectionModeEnabled
-                ? Theme.of(context).colorScheme.onPrimary
-                : Theme.of(context).colorScheme.onPrimaryContainer,
+    return WillPopScope(
+      onWillPop: () async {
+        if (_selectionModeEnabled) {
+          _exitSelectionMode();
+          return false;
+        } else {
+          return true;
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: _selectionModeEnabled
+              ? IconButton(
+                  icon: Icon(Icons.close,
+                      color: Theme.of(context).colorScheme.onPrimary),
+                  onPressed: _exitSelectionMode,
+                )
+              : null,
+          backgroundColor: _selectionModeEnabled
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.primaryContainer,
+          title: Text(
+            _selectionModeEnabled ? "" : widget.title,
+            style: TextStyle(
+              color: _selectionModeEnabled
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : Theme.of(context).colorScheme.onPrimaryContainer,
+            ),
           ),
         ),
-      ),
-      body: ScrollableTileList(
-        key: _childKey,
-        tileListNotifier: widget.tileListNotifier,
-        onSelection: _tileSelected,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => showDialog(
-          // show alert dialog that allows user to create a new tile
-          context: context,
-          builder: (context) {
-            return AddTileDialog(
-              onSubmit: (text) => widget.tileListNotifier.addTile(text),
-            );
-          },
+        body: ScrollableTileList(
+          key: _childKey,
+          tileListNotifier: widget.tileListNotifier,
+          onSelection: _tileSelected,
         ),
-        tooltip: 'Add tile',
-        backgroundColor: Theme.of(context).colorScheme.secondary,
-        child: const Icon(Icons.add, color: Colors.white),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => showDialog(
+            // show alert dialog that allows user to create a new tile
+            context: context,
+            builder: (context) {
+              return AddTileDialog(
+                onSubmit: (text) => widget.tileListNotifier.addTile(text),
+              );
+            },
+          ),
+          tooltip: 'Add tile',
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
       ),
     );
   }

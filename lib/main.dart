@@ -33,6 +33,29 @@ int getDaysSinceDate(String isoDate) {
   return difference.inDays;
 }
 
+final redHSV = HSVColor.fromColor(Colors.red);
+final yellowHSV = HSVColor.fromColor(Colors.yellow.shade800);
+final greenHSV = HSVColor.fromColor(Colors.green);
+
+// if at least 14 days have passed, show red
+// otherwise show a color between green and yellow or yellow and red
+Color getPillColor(int days) {
+  const expirationDays = 14;
+  HSVColor startHSV, endHSV;
+  double ratio;
+  if (days <= expirationDays / 2) {
+    startHSV = greenHSV;
+    endHSV = yellowHSV;
+    ratio = days / (expirationDays / 2);
+  } else {
+    startHSV = yellowHSV;
+    endHSV = redHSV;
+    ratio = (days - expirationDays / 2) / (expirationDays / 2);
+  }
+  ratio = ratio.clamp(0, 1);
+  return HSVColor.lerp(startHSV, endHSV, ratio)!.toColor();
+}
+
 class ScrollableTileList extends StatefulWidget {
   final TileListNotifier tileListNotifier;
   final Function(int?) onSelection;
@@ -110,13 +133,8 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
             widget.tileListNotifier.moveTile(oldIndex, newIndex);
           },
           children: List.generate(tiles.length, (index) {
-            int daysSince = getDaysSinceDate(tiles[index]['date']);
-
-            // if at least 14 days have passed, show red
-            // otherwise show a color between green and red
-            const expirationDays = 14;
-            double colorInterp = (daysSince / expirationDays).clamp(0.0, 1.0);
-
+            final int daysSince = getDaysSinceDate(tiles[index]['date']);
+            final Color pillColor = getPillColor(daysSince);
             final isSelected = index == _selectedIndex;
 
             return InkWell(
@@ -157,10 +175,7 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
                           padding: EdgeInsets.symmetric(
                               horizontal: 12.0, vertical: 6.0),
                           decoration: BoxDecoration(
-                            color: Color.lerp(
-                                    Colors.green, Colors.red, colorInterp)!
-                                .withAlpha(
-                                    230), // Interpolate between green and red based on `colorInterp`
+                            color: pillColor.withAlpha(230),
                             borderRadius: BorderRadius.circular(16.0),
                             boxShadow: [
                               BoxShadow(

@@ -272,8 +272,10 @@ class _MyHomePageState extends State<MyHomePage> {
         appBar: AppBar(
           leading: _selectionModeEnabled
               ? IconButton(
-                  icon: Icon(Icons.close,
-                      color: Theme.of(context).colorScheme.onPrimary),
+                  icon: Icon(
+                    Icons.close,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
                   onPressed: _exitSelectionMode,
                 )
               : null,
@@ -290,49 +292,37 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           actions: _selectionModeEnabled
               ? [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: PopupMenuButton<String>(
-                      color: Theme.of(context).colorScheme.surface,
-                      icon: Icon(
-                        Icons.more_vert,
-                        color: Theme.of(context).colorScheme.onPrimary,
+                  IconButton(
+                    icon: Icon(
+                      Icons.delete_outline,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                    onPressed: () =>
+                        _tileListKey.currentState?.deleteSelectedTile(),
+                  ),
+                  SizedBox(width: 8),
+                  IconButton(
+                    icon: Icon(
+                      Icons.drive_file_rename_outline,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                    onPressed: () => showDialog(
+                      // show alert dialog that allows user to rename tile
+                      context: context,
+                      builder: (context) => InputDialog(
+                        title: "Rename Task",
+                        submitButtonName: "Save",
+                        onSubmit: (text) {
+                          _tileListKey.currentState?.updateTileName(text);
+                          _exitSelectionMode();
+                        },
+                        initialText:
+                            _tileListKey.currentState?.getSelectedTileText() ??
+                                "",
                       ),
-                      onSelected: (String value) {
-                        if (value == "rename") {
-                          showDialog(
-                            // show alert dialog that allows user to rename tile
-                            context: context,
-                            builder: (context) => InputDialog(
-                              title: "Rename Task",
-                              submitButtonName: "Save",
-                              onSubmit: (text) {
-                                _tileListKey.currentState?.updateTileName(text);
-                                _exitSelectionMode();
-                              },
-                              initialText: _tileListKey.currentState
-                                      ?.getSelectedTileText() ??
-                                  "",
-                            ),
-                          );
-                        } else if (value == "delete") {
-                          _tileListKey.currentState?.deleteSelectedTile();
-                        }
-                      },
-                      itemBuilder: (BuildContext context) {
-                        return [
-                          PopupMenuItem<String>(
-                            value: 'rename',
-                            child: Text('Rename'),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'delete',
-                            child: Text('Delete'),
-                          ),
-                        ];
-                      },
                     ),
                   ),
+                  SizedBox(width: 8),
                 ]
               : null,
         ),

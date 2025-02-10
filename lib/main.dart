@@ -288,8 +288,10 @@ class _MyHomePageState extends State<MyHomePage> {
                             builder: (context) => InputDialog(
                               title: "Rename Task",
                               submitButtonName: "Save",
-                              onSubmit: (text) => _tileListKey.currentState
-                                  ?.updateTileName(text),
+                              onSubmit: (text) {
+                                _tileListKey.currentState?.updateTileName(text);
+                                _exitSelectionMode();
+                              },
                               initialText: _tileListKey.currentState
                                       ?.getSelectedTileText() ??
                                   "",

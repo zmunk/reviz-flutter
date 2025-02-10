@@ -495,5 +495,6 @@ class TileListNotifier extends ChangeNotifier
 
   void deleteTile(int tileIndex) {
     _tiles.removeAt(tileIndex);
+    _saveTiles();
   }
 }

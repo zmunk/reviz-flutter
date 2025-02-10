@@ -147,6 +147,13 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
               onTap: () {
                 if (widget.isSelectionModeEnabled()) {
                   _handleSelection(index);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Press and hold tile'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
                 }
               },
               child: Container(

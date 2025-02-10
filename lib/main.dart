@@ -59,9 +59,13 @@ Color getPillColor(int days) {
 class ScrollableTileList extends StatefulWidget {
   final TileListNotifier tileListNotifier;
   final Function(int?) onSelection;
+  final bool Function() isSelectionModeEnabled;
 
   const ScrollableTileList(
-      {super.key, required this.tileListNotifier, required this.onSelection});
+      {super.key,
+      required this.tileListNotifier,
+      required this.onSelection,
+      required this.isSelectionModeEnabled});
 
   @override
   State<ScrollableTileList> createState() => _ScrollableTileListState();
@@ -140,6 +144,11 @@ class _ScrollableTileListState extends State<ScrollableTileList> {
             return InkWell(
               key: Key("$index"),
               onLongPress: () => _handleSelection(index),
+              onTap: () {
+                if (widget.isSelectionModeEnabled()) {
+                  _handleSelection(index);
+                }
+              },
               child: Container(
                 color: isSelected
                     ? Theme.of(context).colorScheme.primary
@@ -232,6 +241,8 @@ class _MyHomePageState extends State<MyHomePage> {
     _tileListKey.currentState?.exitSelectionMode();
   }
 
+  bool isSelectionModeEnabled() => _selectionModeEnabled;
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -322,6 +333,7 @@ class _MyHomePageState extends State<MyHomePage> {
           key: _tileListKey,
           tileListNotifier: widget.tileListNotifier,
           onSelection: _tileSelected,
+          isSelectionModeEnabled: isSelectionModeEnabled,
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
